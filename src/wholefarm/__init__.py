@@ -14,7 +14,7 @@ from .livestock_farm import (
     LivestockFarmResult,
     run_livestock_farm,
 )
-from .nutrient_flow import ManureRecoveryConfig, ManureNutrientFlow, route_manure_to_fields
+from .nutrient_flow import ManureNutrientFlow, ManureRecoveryConfig, route_manure_to_fields
 from .soc_stock import SoilLayer, aggregate_soc_layers_t_c_ha, soc_stock_t_c_ha
 
 __all__ = [
