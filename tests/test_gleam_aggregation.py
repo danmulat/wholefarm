@@ -6,7 +6,6 @@ from wholefarm.gleam_aggregation import (
     calc_cohort_totals,
 )
 
-
 FEED = [{"emissions_source": "co2_ration_fertilizer"}]
 
 
