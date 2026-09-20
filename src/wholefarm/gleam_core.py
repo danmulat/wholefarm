@@ -449,3 +449,101 @@ def calc_meat_production(
     bone_free = carcass * bone_free_meat_fraction
     protein = bone_free * meat_protein_fraction
     return MeatProduction(live_weight, carcass, bone_free, protein)
+
+
+def calc_ration_metabolizable_energy(
+    species_short: str,
+    feed_ration_fraction: float,
+    feed_metabolizable_energy_ruminant: float | None = None,
+    feed_metabolizable_energy_pigs: float | None = None,
+) -> float:
+    _species(species_short)
+    _fraction(feed_ration_fraction, "feed_ration_fraction")
+    if species_short in GLEAM_MILK_PRODUCERS:
+        if feed_metabolizable_energy_ruminant is None:
+            raise ValueError("ruminant metabolizable energy is required")
+        value = feed_metabolizable_energy_ruminant
+    else:
+        if feed_metabolizable_energy_pigs is None:
+            raise ValueError("pig metabolizable energy is required")
+        value = feed_metabolizable_energy_pigs
+    _nonnegative(value, "feed_metabolizable_energy")
+    return feed_ration_fraction * value
+
+
+def calc_ration_urinary_energy_fraction(
+    species_short: str,
+    feed_ration_fraction: float,
+    feed_urinary_energy_ruminant: float | None = None,
+    feed_urinary_energy_pigs: float | None = None,
+) -> float:
+    _species(species_short)
+    _fraction(feed_ration_fraction, "feed_ration_fraction")
+    if species_short in GLEAM_MILK_PRODUCERS:
+        if feed_urinary_energy_ruminant is None:
+            raise ValueError("ruminant urinary energy fraction is required")
+        value = feed_urinary_energy_ruminant
+    else:
+        if feed_urinary_energy_pigs is None:
+            raise ValueError("pig urinary energy fraction is required")
+        value = feed_urinary_energy_pigs
+    _fraction(value, "feed_urinary_energy_fraction")
+    return feed_ration_fraction * value
+
+
+def calc_fibre_production(
+    species_short: str,
+    cohort_short: str,
+    fibre_yield_year: float,
+    simulation_duration: float,
+    cohort_stock_size: float,
+) -> float:
+    _species(species_short)
+    _cohort(cohort_short)
+    for value, name in (
+        (fibre_yield_year, "fibre_yield_year"),
+        (simulation_duration, "simulation_duration"),
+        (cohort_stock_size, "cohort_stock_size"),
+    ):
+        _nonnegative(value, name)
+    if species_short in ("GTS", "SHP", "CML") and cohort_short in ("FA", "FS", "MA", "MS"):
+        return fibre_yield_year / 365.0 * simulation_duration * cohort_stock_size
+    return 0.0
+
+
+def calc_n2o_manure_total(
+    n2o_manure_pasture_vol: float,
+    n2o_manure_pasture_leach: float,
+    n2o_manure_burned_vol: float,
+    n2o_manure_burned_leach: float,
+    n2o_manure_other_vol: float,
+    n2o_manure_other_leach: float,
+    n2o_manure_pasture_direct: float,
+    n2o_manure_burned_direct: float,
+    n2o_manure_other_direct: float,
+) -> dict[str, float]:
+    values = (
+        n2o_manure_pasture_vol,
+        n2o_manure_pasture_leach,
+        n2o_manure_burned_vol,
+        n2o_manure_burned_leach,
+        n2o_manure_other_vol,
+        n2o_manure_other_leach,
+        n2o_manure_pasture_direct,
+        n2o_manure_burned_direct,
+        n2o_manure_other_direct,
+    )
+    for index, value in enumerate(values):
+        _nonnegative(value, f"n2o_component_{index}")
+
+    pasture_indirect = n2o_manure_pasture_vol + n2o_manure_pasture_leach
+    burned_indirect = n2o_manure_burned_vol + n2o_manure_burned_leach
+    other_indirect = n2o_manure_other_vol + n2o_manure_other_leach
+    return {
+        "n2o_manure_pasture_indirect": pasture_indirect,
+        "n2o_manure_burned_indirect": burned_indirect,
+        "n2o_manure_other_indirect": other_indirect,
+        "n2o_manure_pasture_total": pasture_indirect + n2o_manure_pasture_direct,
+        "n2o_manure_burned_total": burned_indirect + n2o_manure_burned_direct,
+        "n2o_manure_other_total": other_indirect + n2o_manure_other_direct,
+    }
