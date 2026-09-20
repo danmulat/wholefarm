@@ -478,7 +478,6 @@ def nested_spatial_qrf_cv(
             for index, value in enumerate(cfg.quantiles)
         }
         q05 = quantile_lookup[5]
-        q50 = quantile_lookup[50]
         q95 = quantile_lookup[95]
         metrics = regression_metrics(y_test, mean_prediction)
         for lower in cfg.quantiles:
