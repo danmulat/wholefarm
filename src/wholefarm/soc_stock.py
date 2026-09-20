@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable, Literal
+from typing import Literal
 
 VM0042_MINIMUM_SOC_DEPTH_CM = 30.0
 
@@ -71,7 +72,7 @@ def aggregate_soc_layers_t_c_ha(
 ) -> float:
     if target_depth_cm < VM0042_MINIMUM_SOC_DEPTH_CM:
         raise ValueError("VM0042 target SOC depth must be at least 30 cm")
-    ordered = sorted(tuple(layers), key=lambda item: (item.depth_top_cm, item.depth_bottom_cm))
+    ordered = sorted(layers, key=lambda item: (item.depth_top_cm, item.depth_bottom_cm))
     if not ordered:
         raise ValueError("At least one soil layer is required")
 
