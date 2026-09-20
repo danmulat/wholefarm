@@ -19,7 +19,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_selection import RFECV
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import GridSearchCV, GroupKFold
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 DEFAULT_QUANTILES = tuple(range(5, 100, 5))
@@ -41,6 +41,7 @@ class QRFWorkflowConfig:
     minimum_soc_depth_cm: float = 30.0
     random_state: int = 42
     scale_numeric_features: bool = True
+    scaler_type: str = "standard"
     rfecv_min_fraction: float = 0.10
     rfecv_min_absolute: int = 8
     quantiles: tuple[int, ...] = DEFAULT_QUANTILES
@@ -50,6 +51,8 @@ class QRFWorkflowConfig:
             raise ValueError("VM0042 SOC quantification depth must be at least 30 cm")
         if self.outer_cv < 2 or self.inner_cv < 2:
             raise ValueError("Cross validation fold counts must be at least two")
+        if self.scaler_type not in {"standard", "minmax"}:
+            raise ValueError("scaler_type must be standard or minmax")
         if not 0 < self.rfecv_min_fraction <= 1:
             raise ValueError("rfecv_min_fraction must be in the interval zero to one")
         if self.rfecv_min_absolute < 1:
@@ -244,6 +247,8 @@ class QRFOuterFoldResult:
     selected_features: tuple[str, ...]
     best_params: dict[str, float | int]
     metrics: dict[str, float]
+    scaled: bool = True
+    scaler_type: str = "standard"
 
 
 @dataclass
@@ -251,9 +256,10 @@ class QRFModelBundle:
     model: object
     selected_features: tuple[str, ...]
     medians: pd.Series
-    scaler: StandardScaler | None
+    scaler: StandardScaler | MinMaxScaler | None
     best_params: dict[str, float | int]
     mean_model: object | None = None
+    scaler_type: str | None = None
 
     def transform(self, features: pd.DataFrame) -> np.ndarray:
         frame = features.loc[:, list(self.selected_features)].copy()
@@ -302,6 +308,19 @@ def _prepare_numeric_features(features: pd.DataFrame) -> pd.DataFrame:
     return numeric
 
 
+def _make_scaler(
+    enabled: bool,
+    scaler_type: str,
+) -> StandardScaler | MinMaxScaler | None:
+    if not enabled:
+        return None
+    if scaler_type == "standard":
+        return StandardScaler()
+    if scaler_type == "minmax":
+        return MinMaxScaler()
+    raise ValueError("scaler_type must be standard or minmax")
+
+
 def nested_spatial_qrf_cv(
     features: pd.DataFrame,
     target: Sequence[float],
@@ -345,7 +364,7 @@ def nested_spatial_qrf_cv(
         x_train = x_train.fillna(medians)
         x_test = x_test.fillna(medians)
 
-        scaler = StandardScaler() if cfg.scale_numeric_features else None
+        scaler = _make_scaler(cfg.scale_numeric_features, cfg.scaler_type)
         if scaler is None:
             train_values = x_train.to_numpy(dtype=float)
             test_values = x_test.to_numpy(dtype=float)
@@ -433,6 +452,8 @@ def nested_spatial_qrf_cv(
                 selected_features=selected_features,
                 best_params=best_params,
                 metrics=metrics,
+                scaled=cfg.scale_numeric_features,
+                scaler_type=cfg.scaler_type,
             )
         )
         prediction_rows.append(
@@ -472,7 +493,7 @@ def fit_final_qrf(
 
     medians = x.median(numeric_only=True)
     x = x.fillna(medians)
-    scaler = StandardScaler() if cfg.scale_numeric_features else None
+    scaler = _make_scaler(cfg.scale_numeric_features, cfg.scaler_type)
     values = scaler.fit_transform(x) if scaler is not None else x.to_numpy(dtype=float)
 
     n_groups = int(pd.Series(group_array).nunique())
@@ -519,7 +540,9 @@ def fit_final_qrf(
     selected_medians = medians.loc[list(selected_features)]
     selected_frame = x.loc[:, list(selected_features)]
     if scaler is not None:
-        selected_scaler = StandardScaler()
+        selected_scaler = _make_scaler(True, cfg.scaler_type)
+        if selected_scaler is None:
+            raise RuntimeError("Scaler construction failed")
         selected_training = selected_scaler.fit_transform(selected_frame)
     else:
         selected_scaler = None
@@ -547,11 +570,13 @@ def fit_final_qrf(
         scaler=selected_scaler,
         best_params=best_params,
         mean_model=mean_model,
+        scaler_type=cfg.scaler_type if cfg.scale_numeric_features else None,
     )
+
 
 def consensus_features(
     fold_results: Sequence[QRFOuterFoldResult],
-    minimum_fold_count: int = 4,
+    minimum_fold_count: int = 2,
 ) -> tuple[str, ...]:
     """Select features retained in at least the requested number of outer folds."""
 
@@ -634,12 +659,32 @@ def consensus_best_params(
     return final
 
 
+def consensus_scaling(
+    fold_results: Sequence[QRFOuterFoldResult],
+) -> tuple[bool, str]:
+    """Select scaling settings by fold mode with RPIQ used for ties."""
+
+    if not fold_results:
+        raise ValueError("At least one fold result is required")
+    scores = [float(item.metrics.get("rpiq", np.nan)) for item in fold_results]
+    scaled_value = _mode_parameter_with_rpiq_tie_break(
+        [int(item.scaled) for item in fold_results],
+        scores,
+    )
+    scaler_value = _mode_parameter_with_rpiq_tie_break(
+        [0 if item.scaler_type == "standard" else 1 for item in fold_results],
+        scores,
+    )
+    return bool(scaled_value), "standard" if scaler_value == 0 else "minmax"
+
+
 def fit_consensus_qrf(
     features: pd.DataFrame,
     target: Sequence[float],
     fold_results: Sequence[QRFOuterFoldResult],
-    minimum_fold_count: int = 4,
-    scale_numeric_features: bool = True,
+    minimum_fold_count: int = 2,
+    scale_numeric_features: bool | None = None,
+    scaler_type: str | None = None,
     random_state: int = 42,
 ) -> QRFModelBundle:
     """Fit the final RF mean and QRF interval models from outer fold consensus.
@@ -662,12 +707,22 @@ def fit_consensus_qrf(
         raise ValueError(f"Consensus features are missing from training data: {sorted(missing)}")
 
     best_params = consensus_best_params(fold_results)
+    consensus_scaled, consensus_scaler_type = consensus_scaling(fold_results)
+    if scale_numeric_features is None:
+        scale_numeric_features = consensus_scaled
+    if scaler_type is None:
+        scaler_type = consensus_scaler_type
+    if scaler_type not in {"standard", "minmax"}:
+        raise ValueError("scaler_type must be standard or minmax")
+
     selected_frame = x.loc[:, list(selected_features)].copy()
     medians = selected_frame.median(numeric_only=True)
     selected_frame = selected_frame.fillna(medians)
 
     if scale_numeric_features:
-        scaler = StandardScaler()
+        scaler = _make_scaler(True, scaler_type)
+        if scaler is None:
+            raise RuntimeError("Scaler construction failed")
         training = scaler.fit_transform(selected_frame)
     else:
         scaler = None
@@ -695,4 +750,5 @@ def fit_consensus_qrf(
         scaler=scaler,
         best_params=best_params,
         mean_model=mean_model,
+        scaler_type=scaler_type if scale_numeric_features else None,
     )
