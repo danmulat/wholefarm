@@ -18,6 +18,12 @@ equations:
     status: implemented
     origin: carbon_mass_balance
     formula: (SOC_final - SOC_initial) * area_ha * 44 / 12
+  SOC_ESM_001:
+    module: soc_stock
+    name: equivalent_soil_mass_stock
+    status: implemented
+    origin: soil_stock_measurement_support
+    rule: baseline_fine_soil_mass_used_as_reference_for_repeated_profile_comparison
   QRF_PRE_001:
     module: soc_qrf
     name: correlation_clustering
