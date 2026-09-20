@@ -47,7 +47,13 @@ equations:
     name: fold_consensus_final_model
     status: implemented
     origin: florida_soc_qrf
-    rule: feature_frequency_minimum_4_folds_and_parameter_mode_with_rpiq_tie_break
+    rule: feature_frequency_minimum_2_folds_and_parameter_mode_with_rpiq_tie_break
+  QRF_SCALE_001:
+    module: soc_qrf
+    name: fold_consensus_scaling
+    status: implemented
+    origin: florida_soc_qrf
+    rule: scaling_and_scaler_type_mode_with_rpiq_tie_break
   QRF_MAP_001:
     module: soc_mapping
     name: block_raster_prediction
