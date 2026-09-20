@@ -253,14 +253,20 @@ class QRFModelBundle:
     medians: pd.Series
     scaler: StandardScaler | None
     best_params: dict[str, float | int]
+    mean_model: object | None = None
 
     def transform(self, features: pd.DataFrame) -> np.ndarray:
         frame = features.loc[:, list(self.selected_features)].copy()
         frame = frame.replace([np.inf, -np.inf], np.nan).fillna(self.medians)
-        values = frame.to_numpy(dtype=float)
         if self.scaler is not None:
-            values = self.scaler.transform(values)
-        return values
+            return np.asarray(self.scaler.transform(frame), dtype=float)
+        return frame.to_numpy(dtype=float)
+
+    def predict_mean(self, features: pd.DataFrame) -> pd.Series:
+        values = self.transform(features)
+        predictor = self.mean_model if self.mean_model is not None else self.model
+        prediction = np.asarray(predictor.predict(values), dtype=float)
+        return pd.Series(prediction, index=features.index, name="predicted_mean")
 
     def predict_quantiles(
         self,
@@ -390,6 +396,13 @@ def nested_spatial_qrf_cv(
         tuner.fit(selected_train, y_train, groups=train_groups)
         best_params = dict(tuner.best_params_)
 
+        mean_model = RandomForestRegressor(
+            random_state=cfg.random_state,
+            n_jobs=-1,
+            **best_params,
+        )
+        mean_model.fit(selected_train, y_train)
+
         qrf = qrf_type(
             random_state=cfg.random_state,
             n_jobs=-1,
@@ -397,7 +410,7 @@ def nested_spatial_qrf_cv(
         )
         qrf.fit(selected_train, y_train)
 
-        mean_prediction = np.asarray(qrf.predict(selected_test), dtype=float)
+        mean_prediction = np.asarray(mean_model.predict(selected_test), dtype=float)
         quantile_prediction = np.asarray(
             qrf.predict(selected_test, quantiles=[0.05, 0.50, 0.95]),
             dtype=float,
@@ -503,28 +516,35 @@ def fit_final_qrf(
     tuner.fit(selected_values, y, groups=group_array)
 
     qrf_type = _qrf_class()
+    selected_medians = medians.loc[list(selected_features)]
+    selected_frame = x.loc[:, list(selected_features)]
+    if scaler is not None:
+        selected_scaler = StandardScaler()
+        selected_training = selected_scaler.fit_transform(selected_frame)
+    else:
+        selected_scaler = None
+        selected_training = selected_frame.to_numpy(dtype=float)
+
+    best_params = dict(tuner.best_params_)
+    mean_model = RandomForestRegressor(
+        random_state=cfg.random_state,
+        n_jobs=-1,
+        **best_params,
+    )
+    mean_model.fit(selected_training, y)
+
     model = qrf_type(
         random_state=cfg.random_state,
         n_jobs=-1,
-        **dict(tuner.best_params_),
+        **best_params,
     )
-    model.fit(selected_values, y)
-
-    selected_medians = medians.loc[list(selected_features)]
-    if scaler is not None:
-        selected_scaler = StandardScaler()
-        selected_scaler.fit(x.loc[:, list(selected_features)])
-        selected_training = selected_scaler.transform(
-            x.loc[:, list(selected_features)]
-        )
-        model.fit(selected_training, y)
-    else:
-        selected_scaler = None
+    model.fit(selected_training, y)
 
     return QRFModelBundle(
         model=model,
         selected_features=selected_features,
         medians=selected_medians,
         scaler=selected_scaler,
-        best_params=dict(tuner.best_params_),
+        best_params=best_params,
+        mean_model=mean_model,
     )
