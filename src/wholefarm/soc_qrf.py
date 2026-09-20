@@ -63,6 +63,14 @@ class QRFWorkflowConfig:
             raise ValueError("rfecv_min_fraction must be in the interval zero to one")
         if self.rfecv_min_absolute < 1:
             raise ValueError("rfecv_min_absolute must be positive")
+        if not self.quantiles:
+            raise ValueError("At least one quantile is required")
+        if tuple(sorted(set(self.quantiles))) != self.quantiles:
+            raise ValueError("quantiles must be sorted and unique")
+        if any(value <= 0 or value >= 100 for value in self.quantiles):
+            raise ValueError("quantiles must be between zero and one hundred")
+        if not {5, 50, 95}.issubset(self.quantiles):
+            raise ValueError("quantiles must include 5, 50 and 95")
 
 
 def _array(values: Iterable[float]) -> np.ndarray:
@@ -457,19 +465,37 @@ def nested_spatial_qrf_cv(
         qrf.fit(selected_train, y_train)
 
         mean_prediction = np.asarray(mean_model.predict(selected_test), dtype=float)
+        quantile_levels = [value / 100.0 for value in cfg.quantiles]
         quantile_prediction = np.asarray(
-            qrf.predict(selected_test, quantiles=[0.05, 0.50, 0.95]),
+            qrf.predict(selected_test, quantiles=quantile_levels),
             dtype=float,
         )
         if quantile_prediction.ndim == 1:
             quantile_prediction = quantile_prediction[:, None]
 
-        q05 = quantile_prediction[:, 0]
-        q50 = quantile_prediction[:, 1]
-        q95 = quantile_prediction[:, 2]
+        quantile_lookup = {
+            value: quantile_prediction[:, index]
+            for index, value in enumerate(cfg.quantiles)
+        }
+        q05 = quantile_lookup[5]
+        q50 = quantile_lookup[50]
+        q95 = quantile_lookup[95]
         metrics = regression_metrics(y_test, mean_prediction)
-        metrics["picp_90"] = prediction_interval_coverage(y_test, q05, q95)
-        metrics["mean_pi_width_90"] = float(np.mean(q95 - q05))
+        for lower in cfg.quantiles:
+            upper = 100 - lower
+            if lower >= 50 or upper not in quantile_lookup:
+                continue
+            interval = upper - lower
+            low_values = quantile_lookup[lower]
+            high_values = quantile_lookup[upper]
+            metrics[f"picp_{interval}"] = prediction_interval_coverage(
+                y_test,
+                low_values,
+                high_values,
+            )
+            metrics[f"mean_pi_width_{interval}"] = float(
+                np.mean(high_values - low_values)
+            )
 
         results.append(
             QRFOuterFoldResult(
@@ -483,20 +509,16 @@ def nested_spatial_qrf_cv(
                 scaler_type=cfg.scaler_type,
             )
         )
-        prediction_rows.append(
-            pd.DataFrame(
-                {
-                    "row_index": x.index[test_idx],
-                    "fold": fold,
-                    "observed": y_test,
-                    "predicted_mean": mean_prediction,
-                    "q05": q05,
-                    "q50": q50,
-                    "q95": q95,
-                    "interval_width_90": q95 - q05,
-                }
-            )
-        )
+        prediction_data: dict[str, object] = {
+            "row_index": x.index[test_idx],
+            "fold": fold,
+            "observed": y_test,
+            "predicted_mean": mean_prediction,
+        }
+        for value in cfg.quantiles:
+            prediction_data[f"q{value:02d}"] = quantile_lookup[value]
+        prediction_data["interval_width_90"] = q95 - q05
+        prediction_rows.append(pd.DataFrame(prediction_data))
 
     predictions = pd.concat(prediction_rows, ignore_index=True)
     return results, predictions
