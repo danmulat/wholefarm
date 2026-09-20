@@ -47,6 +47,18 @@ equations:
       min_samples_split: [2, 5, 10]
       min_samples_leaf: [1, 2, 4]
       max_features: [0.5, 0.7, 1.0]
+  SOC_HYBRID_001:
+    module: soc_hybrid
+    name: process_guided_training
+    status: implemented_research
+    origin: rothc_guided_ml_research
+    rule: measured_samples_weight_1_process_samples_weight_configurable
+  SOC_HYBRID_002:
+    module: soc_hybrid
+    name: grouped_process_guided_validation
+    status: implemented_research
+    origin: rothc_guided_ml_research
+    rule: process_rows_from_held_out_observation_groups_are_excluded
   ROTHC_001:
     module: rothc
     name: monthly_pool_decomposition
@@ -97,6 +109,12 @@ equations:
     status: implemented
     origin: physical_mass_balance
     note: all recovery fractions are scenario inputs and are not hard coded
+  SOIL_N2O_001:
+    module: soil_ghg
+    name: source_explicit_direct_and_indirect_n2o
+    status: implemented
+    origin: methodology_parameterized_nitrogen_mass_balance
+    note: direct_EF_volatilization_leaching_and_indirect_EFs_are_explicit_inputs
   CAP2ER_N_001:
     module: cap2er
     name: apparent_nitrogen_balance
