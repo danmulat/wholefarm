@@ -6,6 +6,8 @@ project duration, progressive implementation, unit intensity, and discount rules
 defined in the supplied methodology.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 
