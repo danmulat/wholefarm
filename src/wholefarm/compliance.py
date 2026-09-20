@@ -28,7 +28,7 @@ def load_compliance_modes(path: str | Path) -> dict[str, ComplianceMode]:
     source = Path(path)
     data = yaml.safe_load(source.read_text(encoding="utf-8"))
     if not isinstance(data, dict) or not isinstance(data.get("modes"), dict):
-        raise ValueError("Compliance configuration requires a modes mapping")
+        raise TypeError("Compliance configuration requires a modes mapping")
 
     result: dict[str, ComplianceMode] = {}
     for name, settings in data["modes"].items():
