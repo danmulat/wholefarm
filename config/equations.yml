@@ -12,6 +12,12 @@ equations:
     status: implemented
     origin: VM0042_2_2
     rule: depth_cm >= 30
+  SOC_CHANGE_001:
+    module: farm_pipeline
+    name: soc_stock_change_to_co2e
+    status: implemented
+    origin: carbon_mass_balance
+    formula: (SOC_final - SOC_initial) * area_ha * 44 / 12
   QRF_PRE_001:
     module: soc_qrf
     name: correlation_clustering
@@ -79,6 +85,18 @@ equations:
     name: biophysical_allocation
     status: implemented
     origin: gleam_pinned_commit
+  GLEAM_FARM_001:
+    module: livestock_farm
+    name: cohort_to_farm_aggregation
+    status: implemented
+    origin: gleam_pinned_commit_plus_reporting_conversion
+    note: raw gases are converted to CO2e only after cohort aggregation
+  MANURE_LOOP_001:
+    module: nutrient_flow
+    name: manure_nitrogen_and_carbon_recovery
+    status: implemented
+    origin: physical_mass_balance
+    note: all recovery fractions are scenario inputs and are not hard coded
   CAP2ER_N_001:
     module: cap2er
     name: apparent_nitrogen_balance
