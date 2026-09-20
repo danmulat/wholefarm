@@ -6,11 +6,7 @@ project duration, progressive implementation, unit intensity, and discount rules
 defined in the supplied methodology.
 """
 
-from __future__ import annotations
-
-from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Literal
 
 
 MAX_PROJECT_YEARS = 5
@@ -161,7 +157,7 @@ def dairy_unit_emission_gain(
 
 
 def sequestration_gain(
-    practices: Iterable[SequestrationPractice],
+    practices: list[SequestrationPractice],
     hedge: HedgeEstablishment | None = None,
     indirect_n2o_effect_kg_co2e: float = 0.0,
 ) -> float:
@@ -173,7 +169,7 @@ def sequestration_gain(
 
 def apply_reference_discount(
     value_kg_co2e: float,
-    reference: Literal["specific", "generic"],
+    reference: str,
 ) -> float:
     discount = 0.0 if reference == "specific" else 0.10
     return value_kg_co2e * (1.0 - discount)
@@ -190,7 +186,7 @@ def apply_energy_certificate_discount(
 
 def apply_nonpermanence_discount(
     sequestration_gain_kg_co2e: float,
-    source: Literal["soil_or_biomass", "new_hedge"],
+    source: str,
     sustainable_hedge_management_plan: bool = False,
 ) -> float:
     if source == "soil_or_biomass":
@@ -201,7 +197,7 @@ def apply_nonpermanence_discount(
 
 
 def farm_carbon_gain(
-    unit_footprint_gains_kg_co2e: Iterable[float],
+    unit_footprint_gains_kg_co2e: list[float],
     sequestration_gain_kg_co2e: float,
 ) -> CarbonAgriGain:
     footprint = float(sum(unit_footprint_gains_kg_co2e))
