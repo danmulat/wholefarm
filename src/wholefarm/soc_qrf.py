@@ -22,6 +22,12 @@ from sklearn.model_selection import GridSearchCV, GroupKFold
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 
+from .soc_encoding import (
+    TargetEncodingBundle,
+    fit_transform_oof_target_encoding,
+    transform_target_encoding,
+)
+
 DEFAULT_QUANTILES = tuple(range(5, 100, 5))
 DEFAULT_PARAM_GRID = {
     "n_estimators": [200, 400, 600],
@@ -260,9 +266,14 @@ class QRFModelBundle:
     best_params: dict[str, float | int]
     mean_model: object | None = None
     scaler_type: str | None = None
+    target_encoding_bundle: TargetEncodingBundle | None = None
 
     def transform(self, features: pd.DataFrame) -> np.ndarray:
-        frame = features.loc[:, list(self.selected_features)].copy()
+        if self.target_encoding_bundle is not None:
+            source = transform_target_encoding(features, self.target_encoding_bundle)
+        else:
+            source = features
+        frame = source.loc[:, list(self.selected_features)].copy()
         frame = frame.replace([np.inf, -np.inf], np.nan).fillna(self.medians)
         if self.scaler is not None:
             return np.asarray(self.scaler.transform(frame), dtype=float)
@@ -327,11 +338,14 @@ def nested_spatial_qrf_cv(
     groups: Sequence[str],
     config: QRFWorkflowConfig | None = None,
     param_grid: dict[str, list[float | int]] | None = None,
+    categorical_columns: Sequence[str] | None = None,
+    target_encoding_alpha: float = 10.0,
 ) -> tuple[list[QRFOuterFoldResult], pd.DataFrame]:
     """Run nested spatial validation following the reference QRF modeling structure."""
 
     cfg = config or QRFWorkflowConfig()
-    x = _prepare_numeric_features(features)
+    cat_cols = tuple(categorical_columns or ())
+    x = features.copy() if cat_cols else _prepare_numeric_features(features)
     y = np.asarray(target, dtype=float)
     group_array = np.asarray(groups, dtype=object)
 
@@ -354,15 +368,28 @@ def nested_spatial_qrf_cv(
         outer_cv.split(x, y, groups=group_array),
         start=1,
     ):
-        x_train = x.iloc[train_idx].copy()
-        x_test = x.iloc[test_idx].copy()
+        x_train_raw = x.iloc[train_idx].copy()
+        x_test_raw = x.iloc[test_idx].copy()
         y_train = y[train_idx]
         y_test = y[test_idx]
         train_groups = group_array[train_idx]
 
-        medians = x_train.median(numeric_only=True)
-        x_train = x_train.fillna(medians)
-        x_test = x_test.fillna(medians)
+        if cat_cols:
+            x_train, encoding_bundle = fit_transform_oof_target_encoding(
+                x_train_raw,
+                y_train,
+                categorical_columns=cat_cols,
+                groups=train_groups,
+                n_splits=cfg.inner_cv,
+                alpha=target_encoding_alpha,
+                random_state=cfg.random_state,
+            )
+            x_test = transform_target_encoding(x_test_raw, encoding_bundle)
+            medians = x_train.median(numeric_only=True)
+        else:
+            medians = x_train_raw.median(numeric_only=True)
+            x_train = x_train_raw.fillna(medians)
+            x_test = x_test_raw.fillna(medians)
 
         scaler = _make_scaler(cfg.scale_numeric_features, cfg.scaler_type)
         if scaler is None:
@@ -481,15 +508,32 @@ def fit_final_qrf(
     groups: Sequence[str],
     config: QRFWorkflowConfig | None = None,
     param_grid: dict[str, list[float | int]] | None = None,
+    categorical_columns: Sequence[str] | None = None,
+    target_encoding_alpha: float = 10.0,
 ) -> QRFModelBundle:
     """Fit a final QRF after group aware feature selection and tuning."""
 
     cfg = config or QRFWorkflowConfig()
-    x = _prepare_numeric_features(features)
+    cat_cols = tuple(categorical_columns or ())
+    raw = features.copy()
     y = np.asarray(target, dtype=float)
     group_array = np.asarray(groups, dtype=object)
-    if len(x) != len(y) or len(y) != len(group_array):
+    if len(raw) != len(y) or len(y) != len(group_array):
         raise ValueError("Features, target, and groups must have equal row counts")
+
+    encoding_bundle: TargetEncodingBundle | None = None
+    if cat_cols:
+        x, encoding_bundle = fit_transform_oof_target_encoding(
+            raw,
+            y,
+            categorical_columns=cat_cols,
+            groups=group_array,
+            n_splits=cfg.inner_cv,
+            alpha=target_encoding_alpha,
+            random_state=cfg.random_state,
+        )
+    else:
+        x = _prepare_numeric_features(raw)
 
     medians = x.median(numeric_only=True)
     x = x.fillna(medians)
@@ -571,6 +615,7 @@ def fit_final_qrf(
         best_params=best_params,
         mean_model=mean_model,
         scaler_type=cfg.scaler_type if cfg.scale_numeric_features else None,
+        target_encoding_bundle=encoding_bundle,
     )
 
 
@@ -686,6 +731,10 @@ def fit_consensus_qrf(
     scale_numeric_features: bool | None = None,
     scaler_type: str | None = None,
     random_state: int = 42,
+    categorical_columns: Sequence[str] | None = None,
+    target_encoding_groups: Sequence[str] | None = None,
+    target_encoding_splits: int = 5,
+    target_encoding_alpha: float = 10.0,
 ) -> QRFModelBundle:
     """Fit the final RF mean and QRF interval models from outer fold consensus.
 
@@ -694,12 +743,27 @@ def fit_consensus_qrf(
     Forest parameter is chosen by its fold mode with RPIQ used to resolve ties.
     """
 
-    x = _prepare_numeric_features(features)
+    raw = features.copy()
     y = np.asarray(target, dtype=float)
-    if len(x) != len(y):
+    if len(raw) != len(y):
         raise ValueError("Features and target must have equal row counts")
     if not np.isfinite(y).all():
         raise ValueError("Target values must be finite")
+
+    cat_cols = tuple(categorical_columns or ())
+    encoding_bundle: TargetEncodingBundle | None = None
+    if cat_cols:
+        x, encoding_bundle = fit_transform_oof_target_encoding(
+            raw,
+            y,
+            categorical_columns=cat_cols,
+            groups=target_encoding_groups,
+            n_splits=target_encoding_splits,
+            alpha=target_encoding_alpha,
+            random_state=random_state,
+        )
+    else:
+        x = _prepare_numeric_features(raw)
 
     selected_features = consensus_features(fold_results, minimum_fold_count)
     missing = set(selected_features).difference(x.columns)
@@ -751,4 +815,5 @@ def fit_consensus_qrf(
         best_params=best_params,
         mean_model=mean_model,
         scaler_type=scaler_type if scale_numeric_features else None,
+        target_encoding_bundle=encoding_bundle,
     )
