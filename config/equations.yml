@@ -66,6 +66,12 @@ equations:
     status: implemented
     origin: florida_soc_qrf
     rule: RF_mean_QRF_Q05_Q95_blockwise_with_nodata_mask
+  QRF_SPIKE_001:
+    module: soc_spiking
+    name: domain_compatible_training_nodes
+    status: implemented
+    origin: florida_soc_qrf
+    rule: target_validation_with_target_only_target_plus_compatible_and_target_plus_all_legacy_training_nodes
   QRF_RF_001:
     module: soc_qrf
     name: random_forest_grid
@@ -145,6 +151,18 @@ equations:
     status: implemented
     origin: methodology_parameterized_nitrogen_mass_balance
     note: direct_EF_volatilization_leaching_and_indirect_EFs_are_explicit_inputs
+  MANAGEMENT_001:
+    module: management
+    name: annual_land_input_aggregation
+    status: implemented
+    origin: physical_activity_data
+    note: area_scaled_nitrogen_and_carbon_inputs_are_aggregated_by_requested_year
+  ENERGY_001:
+    module: energy
+    name: explicit_energy_emissions
+    status: implemented
+    origin: activity_data_times_explicit_emission_factor
+    note: missing_emission_factors_are_flagged_and_not_marked_complete
   CAP2ER_N_001:
     module: cap2er
     name: apparent_nitrogen_balance
