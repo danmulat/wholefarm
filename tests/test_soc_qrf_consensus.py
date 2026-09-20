@@ -5,6 +5,7 @@ from wholefarm.soc_qrf import (
     QRFOuterFoldResult,
     consensus_best_params,
     consensus_features,
+    consensus_scaling,
     fit_consensus_qrf,
 )
 
@@ -14,6 +15,8 @@ def _fold(
     features: tuple[str, ...],
     n_estimators: int,
     rpiq: float,
+    scaled: bool = True,
+    scaler_type: str = "standard",
 ) -> QRFOuterFoldResult:
     return QRFOuterFoldResult(
         fold=fold,
@@ -28,6 +31,8 @@ def _fold(
             "max_features": 1.0,
         },
         metrics={"rpiq": rpiq, "rmse": 1.0, "r_squared": 0.5},
+        scaled=scaled,
+        scaler_type=scaler_type,
     )
 
 
@@ -73,3 +78,23 @@ def test_consensus_final_model_predicts_mean_and_quantiles() -> None:
     assert len(mean) == 4
     assert list(quantiles.columns) == ["q05", "q50", "q95"]
     assert (quantiles["q95"] >= quantiles["q05"]).all()
+
+
+def test_scaling_consensus_uses_mode_and_rpiq_tie_break() -> None:
+    folds = [
+        _fold(1, ("rainfall", "clay"), 20, 1.0, True, "standard"),
+        _fold(2, ("rainfall", "clay"), 20, 1.5, False, "minmax"),
+        _fold(3, ("rainfall", "clay"), 20, 1.2, True, "standard"),
+    ]
+    scaled, scaler_type = consensus_scaling(folds)
+    assert scaled is True
+    assert scaler_type == "standard"
+
+
+def test_default_feature_frequency_matches_reference_two_fold_rule() -> None:
+    folds = [
+        _fold(1, ("rainfall", "clay", "ndvi"), 20, 1.0),
+        _fold(2, ("rainfall", "clay"), 20, 1.1),
+        _fold(3, ("rainfall", "slope"), 20, 1.2),
+    ]
+    assert consensus_features(folds) == ("rainfall", "clay")
