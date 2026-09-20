@@ -12,7 +12,6 @@ from collections.abc import Sequence
 
 import numpy as np
 
-
 GWP_SETS = {
     "AR6": {"CH4": 27.0, "N2O": 273.0, "CO2": 1.0},
     "AR5_excluding_carbon_feedback": {"CH4": 28.0, "N2O": 265.0, "CO2": 1.0},
