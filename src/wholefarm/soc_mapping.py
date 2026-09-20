@@ -40,6 +40,15 @@ class SOCAreaSummary:
     mean_interval_width_90_t_c_ha: float
 
 
+def required_raw_feature_names(bundle: QRFModelBundle) -> tuple[str, ...]:
+    """Return raw feature order required before optional target encoding."""
+
+    encoding = bundle.target_encoding_bundle
+    if encoding is None:
+        return tuple(bundle.selected_features)
+    return tuple(encoding.numeric_columns) + tuple(encoding.categorical_columns)
+
+
 def predict_soc_table(
     bundle: QRFModelBundle,
     features: pd.DataFrame,
@@ -81,11 +90,11 @@ def predict_soc_block(
     if bands != len(feature_names):
         raise ValueError("feature_names length must equal the raster band count")
 
-    selected = tuple(bundle.selected_features)
+    required_raw = required_raw_feature_names(bundle)
     names = tuple(feature_names)
-    if names != selected:
+    if names != required_raw:
         raise ValueError(
-            "Raster feature band order must exactly match the selected model feature order"
+            "Raster feature band order must exactly match the raw model input feature order"
         )
 
     invalid = _invalid_pixel_mask(array, nodata_value)
@@ -202,9 +211,9 @@ def write_soc_prediction_raster(
     with rasterio.open(input_path) as source:
         if source.count != len(feature_names):
             raise ValueError("Input raster band count must equal feature_names length")
-        if tuple(feature_names) != tuple(bundle.selected_features):
+        if tuple(feature_names) != required_raw_feature_names(bundle):
             raise ValueError(
-                "Input raster band order must exactly match selected model features"
+                "Input raster band order must exactly match raw model input features"
             )
 
         profile = source.profile.copy()
