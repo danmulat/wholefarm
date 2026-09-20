@@ -9,7 +9,6 @@ from wholefarm.compliance import (
     validate_soc_branch_for_mode,
 )
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
