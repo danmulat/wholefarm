@@ -6,6 +6,7 @@ from .gleam_cohort import CohortInputs, RationProfile
 from .gleam_core import ManureManagementSystem
 from .input_schema import (
     LivestockCohortRecord,
+    FarmSurvey,
     LivestockEnterprise,
     ManureManagementRecord,
     RationProfileRecord,
@@ -99,3 +100,12 @@ def enterprise_to_specs(
             )
         )
     return result
+
+
+def farm_survey_to_livestock_specs(
+    survey: FarmSurvey,
+) -> list[LivestockCohortSpec]:
+    specs: list[LivestockCohortSpec] = []
+    for enterprise in survey.livestock_enterprises:
+        specs.extend(enterprise_to_specs(enterprise))
+    return specs
