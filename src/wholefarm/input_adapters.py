@@ -5,8 +5,8 @@ from __future__ import annotations
 from .gleam_cohort import CohortInputs, RationProfile
 from .gleam_core import ManureManagementSystem
 from .input_schema import (
-    LivestockCohortRecord,
     FarmSurvey,
+    LivestockCohortRecord,
     LivestockEnterprise,
     ManureManagementRecord,
     RationProfileRecord,
