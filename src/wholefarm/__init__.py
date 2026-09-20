@@ -1,6 +1,11 @@
 """Whole farm research model."""
 
-from .accounting import CarbonStockChange, FarmGHGInventory, FarmScenarioResult, ScenarioComparison
+from .accounting import (
+    CarbonStockChange,
+    FarmGHGInventory,
+    FarmScenarioResult,
+    ScenarioComparison,
+)
 from .config import ModelConfig
 from .farm_pipeline import (
     FarmScenarioInputs,
@@ -39,12 +44,12 @@ __all__ = [
     "ScenarioComparison",
     "SoilLayer",
     "aggregate_soc_layers_t_c_ha",
+    "build_farm_scenario",
+    "compare_farm_scenarios",
     "equivalent_soil_mass_change_t_c_ha",
     "equivalent_soil_mass_soc_t_c_ha",
     "fine_soil_mass_t_ha",
     "reference_soil_mass_t_ha",
-    "build_farm_scenario",
-    "compare_farm_scenarios",
     "route_manure_to_fields",
     "run_livestock_farm",
     "soc_stock_change_co2e_t",
