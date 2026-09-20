@@ -7,9 +7,9 @@ for Ethiopia and Kenya.
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from math import pi
-from typing import Iterable, Sequence
 
 import numpy as np
 import pandas as pd
@@ -274,7 +274,7 @@ class QRFModelBundle:
         )
         if prediction.ndim == 1:
             prediction = prediction[:, None]
-        columns = [f"q{int(round(q * 100)):02d}" for q in quantiles]
+        columns = [f"q{round(q * 100):02d}" for q in quantiles]
         return pd.DataFrame(prediction, columns=columns, index=features.index)
 
 
