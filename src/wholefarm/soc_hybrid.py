@@ -8,8 +8,8 @@ leakage. This module is research mode and is not automatically a Verra pathway.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 import numpy as np
 import pandas as pd
@@ -187,7 +187,7 @@ def grouped_process_guided_cv(
         ),
         start=1,
     ):
-        held_out = set(str(value) for value in observed_group_array[test_index])
+        held_out = {str(value) for value in observed_group_array[test_index]}
         process_mask = np.asarray(
             [str(value) not in held_out for value in process_group_array],
             dtype=bool,
