@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from .gleam_core import GLEAM_MILK_PRODUCERS, _cohort, _fraction, _nonnegative, _species
+from .gleam_core import _cohort, _fraction, _nonnegative, _species
 
 GLEAM_FEED_EMISSION_SOURCES = (
     "co2_ration_fertilizer",
