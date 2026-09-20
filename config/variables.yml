@@ -1,0 +1,255 @@
+version: 1
+variables:
+  farm_id:
+    module: input_schema
+    unit: text
+    scale: farm
+    required: true
+    role: identifier
+  land_unit_id:
+    module: input_schema
+    unit: text
+    scale: field_or_pasture
+    required: true
+    role: identifier
+  area_ha:
+    module: input_schema
+    unit: ha
+    scale: field_or_pasture
+    required: true
+    role: activity_data
+  latitude:
+    module: input_schema
+    unit: decimal_degree
+    scale: sample_or_field
+    required: true
+    role: spatial_location
+  longitude:
+    module: input_schema
+    unit: decimal_degree
+    scale: sample_or_field
+    required: true
+    role: spatial_location
+  soil_depth_top_cm:
+    module: input_schema
+    unit: cm
+    scale: soil_layer
+    required: true
+    role: soc_measurement
+  soil_depth_bottom_cm:
+    module: input_schema
+    unit: cm
+    scale: soil_layer
+    required: true
+    role: soc_measurement
+  soc_g_kg:
+    module: soc_stock
+    unit: g_C_kg_soil
+    scale: soil_layer
+    required: true
+    role: measured_soc_concentration
+  bulk_density_g_cm3:
+    module: soc_stock
+    unit: g_cm3
+    scale: soil_layer
+    required: preferred
+    role: soc_stock_conversion
+    missing_rule: locally_validated_prediction_required
+  coarse_fragment_percent:
+    module: soc_stock
+    unit: percent
+    scale: soil_layer
+    required: preferred
+    role: soc_stock_conversion
+  soc_stock_t_c_ha:
+    module: soc_stock
+    unit: t_C_ha
+    scale: field_pixel_or_profile
+    required: derived
+    role: soc_stock
+  soc_q05_t_c_ha:
+    module: soc_mapping
+    unit: t_C_ha
+    scale: pixel_or_field
+    required: derived
+    role: soc_uncertainty
+  soc_q50_t_c_ha:
+    module: soc_mapping
+    unit: t_C_ha
+    scale: pixel_or_field
+    required: derived
+    role: soc_uncertainty
+  soc_q95_t_c_ha:
+    module: soc_mapping
+    unit: t_C_ha
+    scale: pixel_or_field
+    required: derived
+    role: soc_uncertainty
+  temperature_c:
+    module: rothc_scenario
+    unit: degree_C
+    scale: monthly_field_or_pixel
+    required: true
+    role: rothc_driver
+  rainfall_mm:
+    module: rothc_scenario
+    unit: mm_month
+    scale: monthly_field_or_pixel
+    required: true
+    role: rothc_driver
+  open_pan_evaporation_mm:
+    module: rothc_scenario
+    unit: mm_month
+    scale: monthly_field_or_pixel
+    required: true
+    role: rothc_driver
+  clay_percent:
+    module: rothc
+    unit: percent
+    scale: soil_profile_or_pixel
+    required: true
+    role: rothc_driver
+  plant_c_input_t_ha:
+    module: rothc_scenario
+    unit: t_C_ha_month
+    scale: field
+    required: true
+    role: rothc_carbon_input
+  manure_c_input_t_ha:
+    module: rothc_scenario
+    unit: t_C_ha_month
+    scale: field
+    required: true
+    role: rothc_carbon_input
+  herd_size_head:
+    module: gleam_demography
+    unit: head
+    scale: farm_and_cohort
+    required: true
+    role: livestock_activity_data
+  cohort_stock_size:
+    module: gleam_cohort
+    unit: head
+    scale: cohort
+    required: derived_or_measured
+    role: livestock_activity_data
+  live_weight_kg:
+    module: gleam_weights
+    unit: kg_head
+    scale: cohort
+    required: true
+    role: livestock_driver
+  milk_yield_kg_head_day:
+    module: gleam_core
+    unit: kg_head_day
+    scale: lactating_cohort
+    required: conditional
+    role: production_driver
+  feed_ration_fraction:
+    module: gleam_core
+    unit: fraction
+    scale: feed_item_and_cohort
+    required: true
+    role: ration_driver
+  feed_digestibility_fraction:
+    module: gleam_core
+    unit: fraction
+    scale: feed_item
+    required: true
+    role: ration_quality
+  feed_gross_energy_mj_kg_dm:
+    module: gleam_core
+    unit: MJ_kg_DM
+    scale: feed_item
+    required: true
+    role: ration_quality
+  feed_nitrogen_kg_kg_dm:
+    module: gleam_core
+    unit: kg_N_kg_DM
+    scale: feed_item
+    required: true
+    role: ration_quality
+  enteric_ch4_kg:
+    module: livestock_farm
+    unit: kg_CH4
+    scale: farm_scenario
+    required: derived
+    role: ghg_output
+  manure_ch4_kg:
+    module: livestock_farm
+    unit: kg_CH4
+    scale: farm_scenario
+    required: derived
+    role: ghg_output
+  manure_n2o_kg:
+    module: livestock_farm
+    unit: kg_N2O
+    scale: farm_scenario
+    required: derived
+    role: ghg_output
+  nitrogen_excretion_kg:
+    module: livestock_farm
+    unit: kg_N
+    scale: farm_scenario
+    required: derived
+    role: manure_loop
+  volatile_solids_kg:
+    module: livestock_farm
+    unit: kg_VS
+    scale: farm_scenario
+    required: derived
+    role: manure_loop
+  field_applied_manure_n_kg:
+    module: nutrient_flow
+    unit: kg_N
+    scale: field_or_farm
+    required: derived
+    role: crop_nitrogen_input
+  field_applied_manure_c_kg:
+    module: nutrient_flow
+    unit: kg_C
+    scale: field_or_farm
+    required: derived
+    role: rothc_carbon_input
+  mineral_n_kg:
+    module: soil_ghg
+    unit: kg_N
+    scale: field_or_farm
+    required: conditional
+    role: soil_n2o_input
+  soil_n2o_kg:
+    module: soil_ghg
+    unit: kg_N2O
+    scale: farm_scenario
+    required: derived
+    role: ghg_output
+  tree_aboveground_dry_matter_t:
+    module: agroforestry
+    unit: t_DM
+    scale: farm_or_land_unit
+    required: conditional
+    role: tree_carbon
+  tree_belowground_dry_matter_t:
+    module: agroforestry
+    unit: t_DM
+    scale: farm_or_land_unit
+    required: conditional
+    role: tree_carbon
+  gross_ghg_t_co2e:
+    module: accounting
+    unit: t_CO2e
+    scale: farm_scenario
+    required: derived
+    role: reporting_output
+  net_ghg_t_co2e:
+    module: accounting
+    unit: t_CO2e
+    scale: farm_scenario
+    required: derived
+    role: reporting_output
+  climate_benefit_t_co2e:
+    module: accounting
+    unit: t_CO2e
+    scale: farm_comparison
+    required: derived
+    role: reporting_output

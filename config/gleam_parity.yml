@@ -1,0 +1,97 @@
+version: 1
+reference:
+  repository: un-fao/GLEAM
+  commit: 90e416197e89093c4f3a347b263ba805d33d4aac
+modules:
+  gleam_core:
+    upstream_files:
+      - R/core_model_ration_quality.R
+      - R/core_model_emissions_enteric.R
+      - R/core_model_nitrogen_balance.R
+      - R/core_model_emissions_manure.R
+      - R/core_model_production.R
+    functions:
+      - calc_feed_digestibility_fraction
+      - calc_ration_digestibility
+      - calc_ration_metabolizable_energy
+      - calc_ration_gross_energy
+      - calc_ration_nitrogen_content
+      - calc_ration_urinary_energy_fraction
+      - calc_ration_ash
+      - calc_conversion_factor_ym
+      - calc_ch4_enteric
+      - calc_nitrogen_intake
+      - calc_nitrogen_retention
+      - calc_nitrogen_excretion
+      - calc_volatile_solids
+      - calc_ch4_manure
+      - calc_n2o_manure_direct
+      - calc_n2o_manure_volatilization
+      - calc_n2o_manure_leaching
+      - calc_n2o_manure_total
+      - calc_milk_production
+      - calc_fibre_production
+      - calc_meat_production
+  gleam_demography:
+    upstream_files:
+      - R/core_model_demographic_herd.R
+    functions:
+      - calc_fecundity_rates
+      - calc_transition_probabilities
+      - calc_steady_state_structure
+      - calc_projected_population_size
+      - calc_summary_offtake
+  gleam_weights:
+    upstream_files:
+      - R/core_model_weights.R
+    functions:
+      - calc_cohort_weights
+      - calc_avg_weights
+      - calc_daily_weight_gain
+  gleam_energy:
+    upstream_files:
+      - R/core_model_metabolic_energy_req.R
+    functions:
+      - calc_metabolic_energy_req_maintenance
+      - calc_metabolic_energy_req_activity
+      - calc_metabolic_energy_req_growth
+      - calc_metabolic_energy_req_lactation
+      - calc_metabolic_energy_req_eggs
+      - calc_metabolic_energy_req_work
+      - calc_metabolic_energy_req_fibre
+      - calc_metabolic_energy_req_pregnancy
+      - calc_rem_maintenance
+      - calc_reg_growth
+      - calc_total_metabolic_energy_req
+      - calc_ration_intake
+  gleam_feed:
+    upstream_files:
+      - R/core_model_emissions_ration.R
+    functions:
+      - calc_co2_ration_fertilizer
+      - calc_co2_ration_pesticides
+      - calc_co2_ration_crop_activities
+      - calc_co2_ration_luc_nopeat
+      - calc_co2_ration_luc_peat
+      - calc_n2o_ration_fertilizer
+      - calc_n2o_ration_manure
+      - calc_n2o_ration_crop_residues
+      - calc_ch4_ration_rice
+  gleam_allocation:
+    upstream_files:
+      - R/core_model_allocation.R
+    functions:
+      - calc_milk_allocation_energy
+      - calc_meat_allocation_energy
+      - calc_fibre_allocation_energy
+      - calc_work_allocation_energy
+      - calc_cohort_to_herd_aggregation
+      - calc_allocation_shares
+      - assign_allocation_shares
+  gleam_aggregation:
+    upstream_files:
+      - R/core_model_aggregation.R
+    functions:
+      - calc_cohort_totals
+      - calc_allocated_emissions
+      - calc_co2eq

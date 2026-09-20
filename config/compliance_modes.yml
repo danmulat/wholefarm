@@ -1,0 +1,31 @@
+modes:
+  scientific_whole_farm:
+    status: research
+    livestock: gleam
+    soc_measurement: qrf
+    soc_temporal: rothc
+    indicators: cap2er_level_2
+    comparison: baseline_vs_intervention
+  carbon_agri_2019:
+    status: methodology_accounting
+    accounting: carbon_agri
+    project_year_limit: 5
+    warning: modeled_SOC_extensions_must_not_be_called_official_CARBON_AGRI_without_method_acceptance
+  verra_vm0042_process:
+    status: methodology_pathway
+    methodology: VM0042_2_2
+    process_guidance: VMD0053_2_1
+    soc_temporal: rothc
+    warning: independent_validation_required
+  verra_vt0014_dsm:
+    status: methodology_pathway
+    methodology: VM0042_2_2
+    dsm_tool: VT0014_1_0
+    soc_measurement: qrf
+    minimum_depth_cm: 30
+  research_hybrid_soc:
+    status: research_only
+    soc_measurement: qrf
+    soc_temporal: rothc
+    coupling: process_guided_ml
+    warning: not_automatically_Verra_compliant

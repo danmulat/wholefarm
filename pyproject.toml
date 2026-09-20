@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "wholefarm"
+version = "0.1.0"
+description = "Whole farm greenhouse gas, soil carbon, livestock and intervention model for Ethiopia and Kenya"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{name = "Daniel Mulat"}]
+dependencies = [
+  "numpy>=1.26",
+  "pandas>=2.1",
+  "pydantic>=2.6",
+  "PyYAML>=6.0",
+  "scipy>=1.12",
+  "scikit-learn==1.6.1",
+  "statsmodels>=0.14",
+  "quantile-forest==1.4.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.5"]
+geo = ["rasterio>=1.4", "geopandas>=1.0", "shap>=0.48"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wholefarm"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

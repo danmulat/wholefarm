@@ -1,0 +1,83 @@
+version: 1
+sources:
+  local_soc_measurements:
+    category: soil_observation
+    geography: [Ethiopia, Kenya]
+    role: primary_soc_evidence
+    operational_priority: required
+    verification_status: project_data_required
+    allowed_use: [training, calibration, validation, baseline_quantification]
+  national_soil_point_data:
+    category: soil_observation
+    geography: [Ethiopia, Kenya]
+    role: compatible_legacy_observations
+    operational_priority: high
+    verification_status: verify_access_license_and_methods
+    allowed_use: [training, calibration, validation]
+  isda_soil:
+    category: soil_covariate
+    geography: [Africa]
+    role: soil_property_covariate_or_benchmark
+    operational_priority: high
+    verification_status: verify_before_operational_use
+    truth_status: not_primary_lab_truth
+  chirps:
+    category: climate
+    geography: [Ethiopia, Kenya]
+    role: rainfall_time_series
+    operational_priority: high
+    verification_status: verify_before_operational_use
+  temperature_gridded:
+    category: climate
+    geography: [Ethiopia, Kenya]
+    role: temperature_time_series
+    operational_priority: high
+    verification_status: select_and_verify_product
+  sentinel_2:
+    category: earth_observation
+    geography: [Ethiopia, Kenya]
+    role: vegetation_soil_moisture_and_land_cover_features
+    operational_priority: high
+    verification_status: verify_before_operational_use
+  modis_productivity:
+    category: earth_observation
+    geography: [Ethiopia, Kenya]
+    role: productivity_time_series
+    operational_priority: medium
+    verification_status: verify_before_operational_use
+  soil_moisture_gridded:
+    category: earth_observation
+    geography: [Ethiopia, Kenya]
+    role: soil_moisture_time_series
+    operational_priority: medium
+    verification_status: select_and_verify_product
+  digital_elevation_model:
+    category: terrain
+    geography: [Ethiopia, Kenya]
+    role: elevation_slope_and_terrain_features
+    operational_priority: high
+    verification_status: select_and_verify_product
+  land_cover:
+    category: earth_observation
+    geography: [Ethiopia, Kenya]
+    role: land_use_and_domain_mask
+    operational_priority: high
+    verification_status: select_and_verify_product
+  farm_management_surveys:
+    category: management
+    geography: [Omo Ghibe River Basin, Lake Victoria Basin]
+    role: intervention_and_baseline_activity_data
+    operational_priority: required
+    verification_status: project_data_required
+  livestock_measurements:
+    category: livestock
+    geography: [Omo Ghibe River Basin, Lake Victoria Basin]
+    role: herd_feed_production_and_manure_activity_data
+    operational_priority: required
+    verification_status: project_data_required
+rules:
+  measured_soc_is_primary: true
+  predicted_soil_maps_are_not_relabeled_as_lab_measurements: true
+  management_covariates_must_match_observation_date: true
+  training_and_test_sites_must_respect_spatial_groups: true
+  local_domain_compatibility_required_for_legacy_spiking: true

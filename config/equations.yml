@@ -1,0 +1,203 @@
+equations:
+  SOC_STOCK_001:
+    module: soc_stock
+    name: layer_soc_stock
+    status: implemented
+    origin: vm0042_measurement_support
+    units: t_C_ha
+    formula: soc_g_kg * bulk_density_g_cm3 * thickness_cm * 0.1 * fine_fraction
+  SOC_DEPTH_001:
+    module: soc_stock
+    name: minimum_quantification_depth
+    status: implemented
+    origin: VM0042_2_2
+    rule: depth_cm >= 30
+  SOC_CHANGE_001:
+    module: farm_pipeline
+    name: soc_stock_change_to_co2e
+    status: implemented
+    origin: carbon_mass_balance
+    formula: (SOC_final - SOC_initial) * area_ha * 44 / 12
+  SOC_ESM_001:
+    module: soc_stock
+    name: equivalent_soil_mass_stock
+    status: implemented
+    origin: soil_stock_measurement_support
+    rule: baseline_fine_soil_mass_used_as_reference_for_repeated_profile_comparison
+  QRF_PRE_001:
+    module: soc_qrf
+    name: correlation_clustering
+    status: implemented
+    origin: florida_soc_qrf
+    rule: distance = 1 - abs(Pearson_r), average_linkage, threshold_0_2
+  QRF_PRE_002:
+    module: soc_qrf
+    name: vif_filter
+    status: implemented
+    origin: florida_soc_qrf
+    rule: iterative_VIF_threshold_10
+  QRF_CV_001:
+    module: soc_qrf
+    name: nested_spatial_validation
+    status: implemented
+    origin: florida_soc_qrf
+    rule: outer_GroupKFold_5_inner_GroupKFold_3
+  QRF_ENC_001:
+    module: soc_encoding
+    name: group_aware_out_of_fold_target_encoding
+    status: implemented
+    origin: florida_soc_qrf
+    rule: smoothed_category_mean_alpha_10_with_grouped_folds_when_available
+  QRF_FINAL_001:
+    module: soc_qrf
+    name: fold_consensus_final_model
+    status: implemented
+    origin: florida_soc_qrf
+    rule: feature_frequency_minimum_2_folds_and_parameter_mode_with_rpiq_tie_break
+  QRF_SCALE_001:
+    module: soc_qrf
+    name: fold_consensus_scaling
+    status: implemented
+    origin: florida_soc_qrf
+    rule: scaling_and_scaler_type_mode_with_rpiq_tie_break
+  QRF_MAP_001:
+    module: soc_mapping
+    name: block_raster_prediction
+    status: implemented
+    origin: florida_soc_qrf
+    rule: RF_mean_QRF_Q05_Q95_blockwise_with_nodata_mask
+  QRF_SPIKE_001:
+    module: soc_spiking
+    name: domain_compatible_training_nodes
+    status: implemented
+    origin: florida_soc_qrf
+    rule: target_validation_with_target_only_target_plus_compatible_and_target_plus_all_legacy_training_nodes
+  QRF_RF_001:
+    module: soc_qrf
+    name: random_forest_grid
+    status: implemented
+    origin: florida_soc_qrf
+    values:
+      n_estimators: [200, 400, 600]
+      max_depth: [10, 20, 30]
+      min_samples_split: [2, 5, 10]
+      min_samples_leaf: [1, 2, 4]
+      max_features: [0.5, 0.7, 1.0]
+  SOC_HYBRID_001:
+    module: soc_hybrid
+    name: process_guided_training
+    status: implemented_research
+    origin: rothc_guided_ml_research
+    rule: measured_samples_weight_1_process_samples_weight_configurable
+  SOC_HYBRID_002:
+    module: soc_hybrid
+    name: grouped_process_guided_validation
+    status: implemented_research
+    origin: rothc_guided_ml_research
+    rule: process_rows_from_held_out_observation_groups_are_excluded
+  ROTHC_001:
+    module: rothc
+    name: monthly_pool_decomposition
+    status: implemented
+    origin: rothc_pinned_python_reference
+  GLEAM_ENT_001:
+    module: gleam_core
+    name: enteric_methane
+    status: implemented
+    origin: gleam_pinned_commit
+    units: kg_CH4_head_day
+  GLEAM_MAN_001:
+    module: gleam_core
+    name: volatile_solids
+    status: implemented
+    origin: gleam_pinned_commit
+    units: kg_VS_head_day
+  GLEAM_MAN_002:
+    module: gleam_core
+    name: manure_methane
+    status: implemented
+    origin: gleam_pinned_commit
+    units: kg_CH4_head_day
+  GLEAM_N_001:
+    module: gleam_core
+    name: nitrogen_balance
+    status: implemented
+    origin: gleam_pinned_commit
+  GLEAM_DEM_001:
+    module: gleam_demography
+    name: steady_state_herd
+    status: implemented
+    origin: gleam_pinned_commit
+  GLEAM_ALLOC_001:
+    module: gleam_allocation
+    name: biophysical_allocation
+    status: implemented
+    origin: gleam_pinned_commit
+  GLEAM_FARM_001:
+    module: livestock_farm
+    name: cohort_to_farm_aggregation
+    status: implemented
+    origin: gleam_pinned_commit_plus_reporting_conversion
+    note: raw gases are converted to CO2e only after cohort aggregation
+  MANURE_LOOP_001:
+    module: nutrient_flow
+    name: manure_nitrogen_and_carbon_recovery
+    status: implemented
+    origin: physical_mass_balance
+    note: all recovery fractions are scenario inputs and are not hard coded
+  SOIL_N2O_001:
+    module: soil_ghg
+    name: source_explicit_direct_and_indirect_n2o
+    status: implemented
+    origin: methodology_parameterized_nitrogen_mass_balance
+    note: direct_EF_volatilization_leaching_and_indirect_EFs_are_explicit_inputs
+  MANAGEMENT_001:
+    module: management
+    name: annual_land_input_aggregation
+    status: implemented
+    origin: physical_activity_data
+    note: area_scaled_nitrogen_and_carbon_inputs_are_aggregated_by_requested_year
+  ENERGY_001:
+    module: energy
+    name: explicit_energy_emissions
+    status: implemented
+    origin: activity_data_times_explicit_emission_factor
+    note: missing_emission_factors_are_flagged_and_not_marked_complete
+  CAP2ER_N_001:
+    module: cap2er
+    name: apparent_nitrogen_balance
+    status: implemented
+    origin: CAP2ER_2022_page_14
+    formula: (N_inputs - N_outputs) / UAA
+  CAP2ER_N_002:
+    module: cap2er
+    name: nitrogen_efficiency
+    status: implemented
+    origin: CAP2ER_2022_page_14
+    formula: N_outputs / N_inputs
+  CAP2ER_N_003:
+    module: cap2er
+    name: leaching_potential
+    status: implemented
+    origin: CAP2ER_2022_page_14
+    formula: apparent_N_balance - air_N_losses - soil_N_storage
+  CARBON_AGRI_003:
+    module: carbon_agri
+    name: farm_carbon_gain
+    status: implemented
+    origin: CARBON_AGRI_2019_equation_3
+  CARBON_AGRI_004:
+    module: carbon_agri
+    name: carbon_intensity
+    status: implemented
+    origin: CARBON_AGRI_2019_equation_4
+  CARBON_AGRI_005_007:
+    module: carbon_agri
+    name: progressive_unit_emission_gain
+    status: implemented
+    origin: CARBON_AGRI_2019_equations_5_to_7
+  CARBON_AGRI_008:
+    module: carbon_agri
+    name: sequestration_gain
+    status: implemented
+    origin: CARBON_AGRI_2019_equation_8
