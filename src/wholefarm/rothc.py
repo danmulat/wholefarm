@@ -10,9 +10,9 @@ tracking from the reference script is intentionally outside this first module.
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from math import exp
-from typing import Iterable, Sequence
 
 ROTHC_PINNED_COMMIT = "bd90ce3cf616d5316042b73a3b1f09c5b6e3b361"
 
