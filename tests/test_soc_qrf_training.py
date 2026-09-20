@@ -55,8 +55,17 @@ def test_nested_spatial_qrf_outputs_quantile_intervals() -> None:
     )
     assert len(folds) == 4
     assert len(predictions) == len(frame)
-    assert {"q05", "q50", "q95", "interval_width_90"}.issubset(predictions.columns)
+    assert {
+        "q05",
+        "q10",
+        "q50",
+        "q90",
+        "q95",
+        "interval_width_90",
+    }.issubset(predictions.columns)
     assert (predictions["q95"] >= predictions["q05"]).all()
+    assert "picp_90" in folds[0].metrics
+    assert "picp_80" in folds[0].metrics
 
 
 def test_final_qrf_predicts_requested_quantiles() -> None:
