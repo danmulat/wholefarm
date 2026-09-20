@@ -20,7 +20,7 @@ class SoilLayerObservation(BaseModel):
     bulk_density_method: str | None = None
 
     @model_validator(mode="after")
-    def validate_depth_interval(self) -> "SoilLayerObservation":
+    def validate_depth_interval(self) -> SoilLayerObservation:
         if self.depth_bottom_cm <= self.depth_top_cm:
             raise ValueError("depth_bottom_cm must be greater than depth_top_cm")
         return self
@@ -39,7 +39,7 @@ class SoilProfile(BaseModel):
     layers: list[SoilLayerObservation]
 
     @model_validator(mode="after")
-    def validate_profile_depth(self) -> "SoilProfile":
+    def validate_profile_depth(self) -> SoilProfile:
         if not self.layers:
             raise ValueError("At least one soil layer is required")
         ordered = sorted(self.layers, key=lambda layer: layer.depth_top_cm)
@@ -102,7 +102,7 @@ class FarmSurvey(BaseModel):
     soil_profiles: list[SoilProfile] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def validate_references(self) -> "FarmSurvey":
+    def validate_references(self) -> FarmSurvey:
         unit_ids = {unit.land_unit_id for unit in self.land_units}
         if len(unit_ids) != len(self.land_units):
             raise ValueError("land_unit_id values must be unique within a farm")
