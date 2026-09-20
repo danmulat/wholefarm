@@ -221,3 +221,110 @@ def calc_ration_intake(
     if ration_metabolizable_energy <= 0:
         raise ValueError("ration_metabolizable_energy must be positive")
     return metabolic_energy_req_total / ration_metabolizable_energy
+
+
+def calc_metabolic_energy_req_activity(
+    species_short: str,
+    cohort_short: str,
+    metabolic_energy_req_maintenance: float,
+    live_weight_cohort_average: float,
+    low_activity_fraction: float = 0.0,
+    high_activity_fraction: float = 0.0,
+) -> float:
+    """Calculate daily activity energy following the pinned GLEAM rules."""
+
+    _species(species_short)
+    _cohort(cohort_short)
+    _nonnegative(
+        metabolic_energy_req_maintenance,
+        "metabolic_energy_req_maintenance",
+    )
+    _nonnegative(live_weight_cohort_average, "live_weight_cohort_average")
+
+    if species_short in ("CTL", "BFL", "SHP", "GTS"):
+        _fraction(low_activity_fraction, "low_activity_fraction")
+        _fraction(high_activity_fraction, "high_activity_fraction")
+        if abs(low_activity_fraction + high_activity_fraction - 1.0) > 1e-9:
+            raise ValueError("Low and high activity fractions must sum to one")
+
+    if species_short in ("CTL", "BFL"):
+        coefficient = (
+            0.17 * low_activity_fraction
+            + 0.36 * high_activity_fraction
+        )
+        return coefficient * metabolic_energy_req_maintenance
+    if species_short == "CML":
+        return 0.1 * metabolic_energy_req_maintenance
+    if species_short == "GTS":
+        coefficient = (
+            0.019 * low_activity_fraction
+            + 0.024 * high_activity_fraction
+        )
+        return coefficient * live_weight_cohort_average
+    if species_short == "SHP":
+        coefficient = (
+            0.0107 * low_activity_fraction
+            + 0.024 * high_activity_fraction
+        )
+        return coefficient * live_weight_cohort_average
+    if species_short == "PGS":
+        return 0.125 * metabolic_energy_req_maintenance
+    raise ValueError("unsupported species")
+
+
+def calc_metabolic_energy_req_work(
+    species_short: str,
+    cohort_short: str,
+    metabolic_energy_req_maintenance: float,
+    draught_work_hours_female: float = 0.0,
+    draught_work_hours_male: float = 0.0,
+    draught_fraction_female: float = 0.0,
+    draught_fraction_male: float = 0.0,
+) -> float:
+    """Calculate daily draught work energy for adult cattle, buffalo, and camels."""
+
+    _species(species_short)
+    _cohort(cohort_short)
+    _nonnegative(
+        metabolic_energy_req_maintenance,
+        "metabolic_energy_req_maintenance",
+    )
+
+    if species_short not in ("CTL", "BFL", "CML"):
+        return 0.0
+    if cohort_short not in ("FA", "MA"):
+        return 0.0
+
+    if cohort_short == "FA":
+        hours = draught_work_hours_female
+        fraction = draught_fraction_female
+    else:
+        hours = draught_work_hours_male
+        fraction = draught_fraction_male
+
+    _nonnegative(hours, "draught_work_hours")
+    _fraction(fraction, "draught_fraction")
+
+    if species_short in ("CTL", "BFL"):
+        return 0.1 * metabolic_energy_req_maintenance * hours * fraction
+    return 4.0 * hours * fraction
+
+
+def calc_metabolic_energy_req_fibre(
+    species_short: str,
+    cohort_short: str,
+    fibre_yield_year: float = 0.0,
+) -> float:
+    """Calculate daily fibre production energy from the pinned GLEAM source."""
+
+    _species(species_short)
+    _cohort(cohort_short)
+    _nonnegative(fibre_yield_year, "fibre_yield_year")
+
+    if cohort_short not in ("FA", "FS", "MA", "MS"):
+        return 0.0
+    if species_short in ("SHP", "GTS"):
+        return 24.0 * fibre_yield_year / 365.0
+    if species_short == "CML":
+        return (24.0 / 0.43) * fibre_yield_year / 365.0
+    return 0.0
