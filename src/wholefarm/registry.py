@@ -27,7 +27,7 @@ def _load_yaml(path: str | Path) -> dict[str, Any]:
     with source.open("r", encoding="utf-8") as handle:
         data = yaml.safe_load(handle)
     if not isinstance(data, dict):
-        raise ValueError("Registry YAML root must be a mapping")
+        raise TypeError("Registry YAML root must be a mapping")
     return data
 
 
@@ -40,7 +40,7 @@ def load_variable_registry(path: str | Path) -> Registry:
         raise ValueError("Variable registry must contain variable entries")
     for name, item in entries.items():
         if not isinstance(item, dict):
-            raise ValueError(f"Variable entry must be a mapping: {name}")
+            raise TypeError(f"Variable entry must be a mapping: {name}")
         required = {"module", "unit", "scale", "required", "role"}
         missing = required.difference(item)
         if missing:
@@ -57,7 +57,7 @@ def load_data_source_registry(path: str | Path) -> Registry:
         raise ValueError("Data source registry must contain source entries")
     for name, item in entries.items():
         if not isinstance(item, dict):
-            raise ValueError(f"Data source entry must be a mapping: {name}")
+            raise TypeError(f"Data source entry must be a mapping: {name}")
         required = {
             "category",
             "geography",
