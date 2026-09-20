@@ -1,4 +1,4 @@
-from wholefarm.gleam_core import (
+import pytest\n\nfrom wholefarm.gleam_core import (
     calc_fibre_production,
     calc_n2o_manure_total,
     calc_ration_metabolizable_energy,
@@ -8,7 +8,7 @@ from wholefarm.gleam_core import (
 
 def test_ration_metabolizable_energy_reference_cases() -> None:
     assert calc_ration_metabolizable_energy("CTL", 0.6, 10, 12) == 6
-    assert calc_ration_metabolizable_energy("PGS", 0.6, 10, 12) == 7.2
+    assert calc_ration_metabolizable_energy("PGS", 0.6, 10, 12) == pytest.approx(7.2)
 
 
 def test_ration_urinary_energy_reference_cases() -> None:
