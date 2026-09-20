@@ -312,7 +312,7 @@ def test_pinned_energy_reference_cases() -> None:
         net_energy_growth_digestible_energy_ratio=0.5,
         ration_digestibility_fraction=0.65,
     )
-    assert total == pytest.approx((((15.0 + 3.0 + 8.0 + 1.5) / 0.6) / 0.65))
+    assert total == pytest.approx(((15.0 + 3.0 + 8.0 + 1.5) / 0.6) / 0.65)
 
     assert calc_ration_intake("CTL", 25.0, 18.5, 12.0) == pytest.approx(25.0 / 18.5)
     assert calc_ration_intake("PGS", 15.0, 18.0, 13.5) == pytest.approx(15.0 / 13.5)
