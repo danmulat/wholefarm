@@ -36,6 +36,24 @@ equations:
     status: implemented
     origin: florida_soc_qrf
     rule: outer_GroupKFold_5_inner_GroupKFold_3
+  QRF_ENC_001:
+    module: soc_encoding
+    name: group_aware_out_of_fold_target_encoding
+    status: implemented
+    origin: florida_soc_qrf
+    rule: smoothed_category_mean_alpha_10_with_grouped_folds_when_available
+  QRF_FINAL_001:
+    module: soc_qrf
+    name: fold_consensus_final_model
+    status: implemented
+    origin: florida_soc_qrf
+    rule: feature_frequency_minimum_4_folds_and_parameter_mode_with_rpiq_tie_break
+  QRF_MAP_001:
+    module: soc_mapping
+    name: block_raster_prediction
+    status: implemented
+    origin: florida_soc_qrf
+    rule: RF_mean_QRF_Q05_Q95_blockwise_with_nodata_mask
   QRF_RF_001:
     module: soc_qrf
     name: random_forest_grid
