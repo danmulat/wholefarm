@@ -1,4 +1,6 @@
-import pytest\n\nfrom wholefarm.gleam_core import (
+import pytest
+
+from wholefarm.gleam_core import (
     calc_fibre_production,
     calc_n2o_manure_total,
     calc_ration_metabolizable_energy,
