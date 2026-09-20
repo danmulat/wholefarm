@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
-from .rothc import RothCMonth, RothCPools, annual_soc_trajectory, run_months
+from .rothc import RothCMonth, RothCPools, annual_soc_trajectory
 
 
 @dataclass(frozen=True)
