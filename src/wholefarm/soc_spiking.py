@@ -61,7 +61,7 @@ def build_spiking_folds(
         raise ValueError("At least two target observations are required")
 
     target_groups = groups[target_indices]
-    unique_target_groups = len(set(str(value) for value in target_groups))
+    unique_target_groups = len({str(value) for value in target_groups})
     splits = min(outer_cv, unique_target_groups)
     if splits < 2:
         raise ValueError("At least two target spatial groups are required")
