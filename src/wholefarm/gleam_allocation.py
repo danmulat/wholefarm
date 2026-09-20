@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections.abc import Sequence
 from typing import Literal
+
+import pandas as pd
 
 from .gleam_core import _cohort, _fraction, _nonnegative, _species
 
@@ -263,3 +266,74 @@ def calc_cohort_total(
             / 1000.0
         )
     return value * cohort_stock_size * simulation_duration
+
+
+def calc_cohort_to_herd_aggregation(
+    data_cohort: pd.DataFrame,
+    id_cols: Sequence[str],
+    vars_to_sum: Sequence[str],
+    cohort_short: str | None = None,
+) -> pd.DataFrame:
+    """Aggregate cohort rows to herd totals as in the pinned GLEAM core model."""
+
+    _ = cohort_short
+    missing = set(id_cols).union(vars_to_sum).difference(data_cohort.columns)
+    if missing:
+        raise ValueError(f"Missing aggregation columns: {sorted(missing)}")
+    if not id_cols:
+        raise ValueError("At least one herd identifier column is required")
+    if not vars_to_sum:
+        raise ValueError("At least one variable must be aggregated")
+
+    return (
+        data_cohort.groupby(list(id_cols), dropna=False, as_index=False)[list(vars_to_sum)]
+        .sum()
+    )
+
+
+def assign_allocation_shares(
+    allocation_herd_long: pd.DataFrame,
+    emissions_vars: Sequence[str],
+    commodities: Sequence[str],
+    non_allocated_emission_sources: Sequence[str],
+    commodity_col: str = "commodity_name",
+    allocation_col: str = "allocation_share",
+) -> pd.DataFrame:
+    """Expand commodity shares across emission sources and apply GLEAM exclusions."""
+
+    if commodity_col not in allocation_herd_long.columns:
+        raise ValueError(f"Missing commodity column: {commodity_col}")
+    if allocation_col not in allocation_herd_long.columns:
+        raise ValueError(f"Missing allocation column: {allocation_col}")
+    if not emissions_vars:
+        raise ValueError("At least one emission variable is required")
+    if not commodities:
+        raise ValueError("At least one commodity is required")
+
+    commodity_values = set(allocation_herd_long[commodity_col].astype(str))
+    requested_commodities = set(str(value) for value in commodities)
+    missing_commodities = requested_commodities.difference(commodity_values)
+    if missing_commodities:
+        raise ValueError(
+            f"Allocation table is missing commodities: {sorted(missing_commodities)}"
+        )
+
+    grid = pd.MultiIndex.from_product(
+        [list(emissions_vars), list(commodities)],
+        names=["variable_name", commodity_col],
+    ).to_frame(index=False)
+
+    expanded = allocation_herd_long.merge(
+        grid,
+        how="inner",
+        on=commodity_col,
+        validate="many_to_many",
+    )
+    non_allocated = set(non_allocated_emission_sources)
+    is_non_allocated = expanded["variable_name"].isin(non_allocated)
+    is_other = expanded[commodity_col].astype(str).eq("Other")
+
+    expanded.loc[is_non_allocated & is_other, allocation_col] = 1.0
+    expanded.loc[is_non_allocated & ~is_other, allocation_col] = 0.0
+    expanded.loc[~is_non_allocated & is_other, allocation_col] = 0.0
+    return expanded
