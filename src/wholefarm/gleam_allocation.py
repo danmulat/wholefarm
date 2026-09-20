@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Literal
 
 import pandas as pd
@@ -311,7 +311,7 @@ def assign_allocation_shares(
         raise ValueError("At least one commodity is required")
 
     commodity_values = set(allocation_herd_long[commodity_col].astype(str))
-    requested_commodities = set(str(value) for value in commodities)
+    requested_commodities = {str(value) for value in commodities}
     missing_commodities = requested_commodities.difference(commodity_values)
     if missing_commodities:
         raise ValueError(
