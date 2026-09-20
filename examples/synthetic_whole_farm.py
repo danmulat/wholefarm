@@ -7,7 +7,6 @@ only for software testing. They are not project measurements.
 from __future__ import annotations
 
 import json
-from dataclasses import replace
 
 from wholefarm.farm_pipeline import FarmScenarioInputs, compare_farm_scenarios
 from wholefarm.gleam_cohort import CohortInputs, RationProfile
