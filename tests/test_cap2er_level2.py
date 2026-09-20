@@ -1,6 +1,6 @@
 from wholefarm.cap2er_level2 import (
-    IndicatorValue,
     LEVEL2_INDICATORS,
+    IndicatorValue,
     empty_level2_report,
     merge_level2_results,
 )
