@@ -18,7 +18,7 @@ class MethodologyConfig(BaseModel):
     gleam_commit: str = "90e416197e89093c4f3a347b263ba805d33d4aac"
     florida_soc_repository: str = "Ecosystem-Services-GeoAI/florida-grazing-soc-qrf"
     florida_soc_commit: str = "48c3794256d88e87e3cc83bb66694a5f11bbbce0"
-    rothc_repository: str = "Rothamsted-Models/RothC_Py"
+    rothc_repository: str = "Rothamsted-Models/RothC_Py"\n    rothc_commit: str = "bd90ce3cf616d5316042b73a3b1f09c5b6e3b361"
 
 
 class Constants(BaseModel):
