@@ -650,3 +650,21 @@ def calc_metabolic_energy_req_pregnancy(
         )
 
     raise ValueError("unsupported species")
+
+
+def calc_metabolic_energy_req_eggs(
+    species_short: str,
+    cohort_short: str,
+    egg_yield_year: float | None = None,
+    egg_average_weight: float | None = None,
+) -> float:
+    """Match the pinned GLEAM placeholder for egg production energy.
+
+    The pinned FAO source returns NA for every supported input because egg energy
+    is not implemented for the six livestock species currently supported.
+    """
+
+    _species(species_short)
+    _cohort(cohort_short)
+    _ = egg_yield_year, egg_average_weight
+    return float("nan")
