@@ -109,13 +109,22 @@ def fit_transform_oof_target_encoding(
 
     use_group = (
         group_array is not None
-        and int(pd.Series(group_array).nunique()) >= n_splits
+        and int(pd.Series(group_array).nunique()) >= 2
     )
     if use_group:
-        splitter = GroupKFold(n_splits=n_splits)
+        n_unique_groups = int(pd.Series(group_array).nunique())
+        n_splits_eff = min(n_splits, n_unique_groups)
+        splitter = GroupKFold(n_splits=n_splits_eff)
         splits = splitter.split(frame, y, groups=group_array)
     else:
-        splitter = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+        n_splits_eff = min(n_splits, len(frame))
+        if n_splits_eff < 2:
+            raise ValueError("At least two rows are required for target encoding")
+        splitter = KFold(
+            n_splits=n_splits_eff,
+            shuffle=True,
+            random_state=random_state,
+        )
         splits = splitter.split(frame)
 
     for train_index, valid_index in splits:
