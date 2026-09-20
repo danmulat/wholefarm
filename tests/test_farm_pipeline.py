@@ -76,3 +76,20 @@ def test_scenario_comparison_combines_emission_and_removal_changes() -> None:
     assert comparison.gross_emission_reduction_co2e_t > 0
     assert comparison.additional_removals_co2e_t > 0
     assert comparison.total_climate_benefit_co2e_t > 0
+
+
+def test_crop_only_scenario_does_not_require_livestock() -> None:
+    result = build_farm_scenario(
+        FarmScenarioInputs(
+            scenario_name="crop_only",
+            livestock=None,
+            area_ha=3.0,
+            initial_soc_t_c_ha=40.0,
+            final_soc_t_c_ha=41.0,
+            soil_n2o_co2e_t=2.0,
+            energy_co2e_t=0.5,
+        )
+    )
+    assert result.emissions.livestock.total_co2e_t == 0.0
+    assert result.emissions.gross_co2e_t == 2.5
+    assert result.production == {}
