@@ -6,6 +6,7 @@ from wholefarm.soc_mapping import (
     predict_soc_table,
     summarize_soc_predictions,
 )
+from wholefarm.soc_encoding import CategoryEncoder, TargetEncodingBundle
 from wholefarm.soc_qrf import QRFModelBundle
 
 
@@ -87,3 +88,48 @@ def test_area_summary_is_weighted_surface_summary() -> None:
     assert summary.mean_soc_t_c_ha == 17.5
     assert summary.q05_surface_mean_t_c_ha == 15.5
     assert summary.n_valid == 2
+
+
+def _encoded_bundle() -> QRFModelBundle:
+    encoding = TargetEncodingBundle(
+        encoders={
+            "soil_group": CategoryEncoder(
+                mapping={1.0: 5.0, 2.0: 10.0},
+                prior=7.5,
+                alpha=10.0,
+            )
+        },
+        numeric_medians={"rainfall": 10.0},
+        categorical_columns=("soil_group",),
+        numeric_columns=("rainfall",),
+        encoded_feature_names=("rainfall", "__te__soil_group"),
+    )
+    return QRFModelBundle(
+        model=FakeQRF(),
+        selected_features=("rainfall", "__te__soil_group"),
+        medians=pd.Series({"rainfall": 10.0, "__te__soil_group": 7.5}),
+        scaler=None,
+        best_params={},
+        mean_model=FakeMeanRF(),
+        target_encoding_bundle=encoding,
+    )
+
+
+def test_block_prediction_accepts_raw_categorical_raster_band() -> None:
+    stack = np.asarray(
+        [
+            [[10.0, 20.0], [30.0, 40.0]],
+            [[1.0, 2.0], [99.0, 1.0]],
+        ],
+        dtype=np.float32,
+    )
+    result = predict_soc_block(
+        _encoded_bundle(),
+        stack,
+        ("rainfall", "soil_group"),
+    )
+    assert result.valid_mask.sum() == 4
+    assert result.mean[0, 0] == 20.5
+    assert result.mean[0, 1] == 40.5
+    assert result.mean[1, 0] == 45.5
+    assert result.q95[1, 1] > result.q05[1, 1]
