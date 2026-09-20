@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 
+from wholefarm.soc_encoding import CategoryEncoder, TargetEncodingBundle
 from wholefarm.soc_mapping import (
     predict_soc_block,
     predict_soc_table,
     summarize_soc_predictions,
 )
-from wholefarm.soc_encoding import CategoryEncoder, TargetEncodingBundle
 from wholefarm.soc_qrf import QRFModelBundle
 
 
