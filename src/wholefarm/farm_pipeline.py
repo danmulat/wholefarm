@@ -8,6 +8,7 @@ from .accounting import (
     CarbonStockChange,
     FarmGHGInventory,
     FarmScenarioResult,
+    LivestockGHG,
     ScenarioComparison,
 )
 from .livestock_farm import LivestockFarmResult
@@ -16,7 +17,7 @@ from .livestock_farm import LivestockFarmResult
 @dataclass(frozen=True)
 class FarmScenarioInputs:
     scenario_name: str
-    livestock: LivestockFarmResult
+    livestock: LivestockFarmResult | None
     area_ha: float
     initial_soc_t_c_ha: float
     final_soc_t_c_ha: float
@@ -61,16 +62,22 @@ def build_farm_scenario(
     )
     tree_change = inputs.tree_carbon_change_t_c * carbon_to_co2
 
-    production = {
-        "milk_fpcm_kg": inputs.livestock.milk_fpcm_kg,
-        "meat_live_weight_kg": inputs.livestock.meat_live_weight_kg,
-        "meat_carcass_weight_kg": inputs.livestock.meat_carcass_weight_kg,
-        "fibre_kg": inputs.livestock.fibre_kg,
-    }
+    if inputs.livestock is None:
+        production: dict[str, float] = {}
+        livestock_ghg = LivestockGHG()
+    else:
+        production = {
+            "milk_fpcm_kg": inputs.livestock.milk_fpcm_kg,
+            "meat_live_weight_kg": inputs.livestock.meat_live_weight_kg,
+            "meat_carcass_weight_kg": inputs.livestock.meat_carcass_weight_kg,
+            "fibre_kg": inputs.livestock.fibre_kg,
+        }
+        livestock_ghg = inputs.livestock.ghg
+
     return FarmScenarioResult(
         scenario_name=inputs.scenario_name,
         emissions=FarmGHGInventory(
-            livestock=inputs.livestock.ghg,
+            livestock=livestock_ghg,
             soil_n2o_co2e_t=inputs.soil_n2o_co2e_t,
             crop_inputs_co2e_t=inputs.crop_inputs_co2e_t,
             energy_co2e_t=inputs.energy_co2e_t,
