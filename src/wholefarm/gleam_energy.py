@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from math import isnan
 
-from .gleam_core import GLEAM_MILK_PRODUCERS, _cohort, _fraction, _nonnegative, _species
+from .gleam_core import _cohort, _fraction, _nonnegative, _species
 
 NET_ENERGY_SPECIES = ("CTL", "BFL", "SHP", "GTS")
 
