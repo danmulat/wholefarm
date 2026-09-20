@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 MAX_PROJECT_YEARS = 5
 
 
