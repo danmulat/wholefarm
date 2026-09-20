@@ -1,0 +1,119 @@
+equations:
+  SOC_STOCK_001:
+    module: soc_stock
+    name: layer_soc_stock
+    status: implemented
+    origin: vm0042_measurement_support
+    units: t_C_ha
+    formula: soc_g_kg * bulk_density_g_cm3 * thickness_cm * 0.1 * fine_fraction
+  SOC_DEPTH_001:
+    module: soc_stock
+    name: minimum_quantification_depth
+    status: implemented
+    origin: VM0042_2_2
+    rule: depth_cm >= 30
+  QRF_PRE_001:
+    module: soc_qrf
+    name: correlation_clustering
+    status: implemented
+    origin: florida_soc_qrf
+    rule: distance = 1 - abs(Pearson_r), average_linkage, threshold_0_2
+  QRF_PRE_002:
+    module: soc_qrf
+    name: vif_filter
+    status: implemented
+    origin: florida_soc_qrf
+    rule: iterative_VIF_threshold_10
+  QRF_CV_001:
+    module: soc_qrf
+    name: nested_spatial_validation
+    status: implemented
+    origin: florida_soc_qrf
+    rule: outer_GroupKFold_5_inner_GroupKFold_3
+  QRF_RF_001:
+    module: soc_qrf
+    name: random_forest_grid
+    status: implemented
+    origin: florida_soc_qrf
+    values:
+      n_estimators: [200, 400, 600]
+      max_depth: [10, 20, 30]
+      min_samples_split: [2, 5, 10]
+      min_samples_leaf: [1, 2, 4]
+      max_features: [0.5, 0.7, 1.0]
+  ROTHC_001:
+    module: rothc
+    name: monthly_pool_decomposition
+    status: implemented
+    origin: rothc_pinned_python_reference
+  GLEAM_ENT_001:
+    module: gleam_core
+    name: enteric_methane
+    status: implemented
+    origin: gleam_pinned_commit
+    units: kg_CH4_head_day
+  GLEAM_MAN_001:
+    module: gleam_core
+    name: volatile_solids
+    status: implemented
+    origin: gleam_pinned_commit
+    units: kg_VS_head_day
+  GLEAM_MAN_002:
+    module: gleam_core
+    name: manure_methane
+    status: implemented
+    origin: gleam_pinned_commit
+    units: kg_CH4_head_day
+  GLEAM_N_001:
+    module: gleam_core
+    name: nitrogen_balance
+    status: implemented
+    origin: gleam_pinned_commit
+  GLEAM_DEM_001:
+    module: gleam_demography
+    name: steady_state_herd
+    status: implemented
+    origin: gleam_pinned_commit
+  GLEAM_ALLOC_001:
+    module: gleam_allocation
+    name: biophysical_allocation
+    status: implemented
+    origin: gleam_pinned_commit
+  CAP2ER_N_001:
+    module: cap2er
+    name: apparent_nitrogen_balance
+    status: implemented
+    origin: CAP2ER_2022_page_14
+    formula: (N_inputs - N_outputs) / UAA
+  CAP2ER_N_002:
+    module: cap2er
+    name: nitrogen_efficiency
+    status: implemented
+    origin: CAP2ER_2022_page_14
+    formula: N_outputs / N_inputs
+  CAP2ER_N_003:
+    module: cap2er
+    name: leaching_potential
+    status: implemented
+    origin: CAP2ER_2022_page_14
+    formula: apparent_N_balance - air_N_losses - soil_N_storage
+  CARBON_AGRI_003:
+    module: carbon_agri
+    name: farm_carbon_gain
+    status: implemented
+    origin: CARBON_AGRI_2019_equation_3
+  CARBON_AGRI_004:
+    module: carbon_agri
+    name: carbon_intensity
+    status: implemented
+    origin: CARBON_AGRI_2019_equation_4
+  CARBON_AGRI_005_007:
+    module: carbon_agri
+    name: progressive_unit_emission_gain
+    status: implemented
+    origin: CARBON_AGRI_2019_equations_5_to_7
+  CARBON_AGRI_008:
+    module: carbon_agri
+    name: sequestration_gain
+    status: implemented
+    origin: CARBON_AGRI_2019_equation_8
