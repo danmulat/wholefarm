@@ -9,9 +9,9 @@ VM0042 configuration and is not inherited from the Florida study.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
 
 import numpy as np
 import pandas as pd
