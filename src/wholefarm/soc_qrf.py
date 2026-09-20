@@ -548,3 +548,151 @@ def fit_final_qrf(
         best_params=best_params,
         mean_model=mean_model,
     )
+
+def consensus_features(
+    fold_results: Sequence[QRFOuterFoldResult],
+    minimum_fold_count: int = 4,
+) -> tuple[str, ...]:
+    """Select features retained in at least the requested number of outer folds."""
+
+    if not fold_results:
+        raise ValueError("At least one fold result is required")
+    if not 1 <= minimum_fold_count <= len(fold_results):
+        raise ValueError("minimum_fold_count must be between one and the fold count")
+
+    counts: dict[str, int] = {}
+    first_seen: list[str] = []
+    for result in fold_results:
+        for feature in dict.fromkeys(result.selected_features):
+            counts[feature] = counts.get(feature, 0) + 1
+            if feature not in first_seen:
+                first_seen.append(feature)
+
+    selected = tuple(
+        feature
+        for feature in first_seen
+        if counts.get(feature, 0) >= minimum_fold_count
+    )
+    if not selected:
+        raise ValueError("No feature meets the requested fold frequency")
+    return selected
+
+
+def _mode_parameter_with_rpiq_tie_break(
+    values: Sequence[float | int],
+    scores: Sequence[float],
+) -> float | int:
+    if not values:
+        raise ValueError("Cannot choose a parameter from an empty sequence")
+    counts: dict[float | int, int] = {}
+    for value in values:
+        counts[value] = counts.get(value, 0) + 1
+    maximum = max(counts.values())
+    candidates = {value for value, count in counts.items() if count == maximum}
+    if len(candidates) == 1:
+        return next(iter(candidates))
+
+    best_value = None
+    best_score = float("-inf")
+    for value, score in zip(values, scores, strict=True):
+        if value not in candidates or not np.isfinite(score):
+            continue
+        if best_value is None or score > best_score:
+            best_value = value
+            best_score = score
+    if best_value is not None:
+        return best_value
+
+    for value in values:
+        if value in candidates:
+            return value
+    raise RuntimeError("Unable to resolve parameter mode")
+
+
+def consensus_best_params(
+    fold_results: Sequence[QRFOuterFoldResult],
+) -> dict[str, float | int]:
+    """Take each parameter mode across folds and use RPIQ to resolve ties."""
+
+    if not fold_results:
+        raise ValueError("At least one fold result is required")
+    keys: list[str] = []
+    for result in fold_results:
+        for key in result.best_params:
+            if key not in keys:
+                keys.append(key)
+
+    final: dict[str, float | int] = {}
+    for key in keys:
+        values: list[float | int] = []
+        scores: list[float] = []
+        for result in fold_results:
+            if key in result.best_params:
+                values.append(result.best_params[key])
+                scores.append(float(result.metrics.get("rpiq", np.nan)))
+        final[key] = _mode_parameter_with_rpiq_tie_break(values, scores)
+    return final
+
+
+def fit_consensus_qrf(
+    features: pd.DataFrame,
+    target: Sequence[float],
+    fold_results: Sequence[QRFOuterFoldResult],
+    minimum_fold_count: int = 4,
+    scale_numeric_features: bool = True,
+    random_state: int = 42,
+) -> QRFModelBundle:
+    """Fit the final RF mean and QRF interval models from outer fold consensus.
+
+    This mirrors the final model pattern in the pinned Florida mapping workflow:
+    features are retained by outer fold selection frequency and each Random
+    Forest parameter is chosen by its fold mode with RPIQ used to resolve ties.
+    """
+
+    x = _prepare_numeric_features(features)
+    y = np.asarray(target, dtype=float)
+    if len(x) != len(y):
+        raise ValueError("Features and target must have equal row counts")
+    if not np.isfinite(y).all():
+        raise ValueError("Target values must be finite")
+
+    selected_features = consensus_features(fold_results, minimum_fold_count)
+    missing = set(selected_features).difference(x.columns)
+    if missing:
+        raise ValueError(f"Consensus features are missing from training data: {sorted(missing)}")
+
+    best_params = consensus_best_params(fold_results)
+    selected_frame = x.loc[:, list(selected_features)].copy()
+    medians = selected_frame.median(numeric_only=True)
+    selected_frame = selected_frame.fillna(medians)
+
+    if scale_numeric_features:
+        scaler = StandardScaler()
+        training = scaler.fit_transform(selected_frame)
+    else:
+        scaler = None
+        training = selected_frame.to_numpy(dtype=float)
+
+    mean_model = RandomForestRegressor(
+        random_state=random_state,
+        n_jobs=-1,
+        **best_params,
+    )
+    mean_model.fit(training, y)
+
+    qrf_type = _qrf_class()
+    qrf = qrf_type(
+        random_state=random_state,
+        n_jobs=-1,
+        **best_params,
+    )
+    qrf.fit(training, y)
+
+    return QRFModelBundle(
+        model=qrf,
+        selected_features=selected_features,
+        medians=medians,
+        scaler=scaler,
+        best_params=best_params,
+        mean_model=mean_model,
+    )
