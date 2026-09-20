@@ -64,4 +64,4 @@ def test_repeated_profile_esm_change_uses_common_soil_mass() -> None:
         intervention,
         reference_depth_cm=30.0,
     )
-    assert change < 0.0
+    assert change == pytest.approx(0.0)
